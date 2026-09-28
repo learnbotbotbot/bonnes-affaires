@@ -167,5 +167,23 @@
    "img": "https://images.craigslist.org/00o0o_8V9oqGalx1k_0jm0pO_600x450.jpg"
   }
  ],
- "nextN": 12
+ "nextN": 12,
+ "proposals": [
+  {
+   "id": "P1",
+   "text": "Surveiller les liquidations de bulbes et d'ail à planter (souvent -30 à -50 % à la mi-octobre)."
+  },
+  {
+   "id": "P2",
+   "text": "Repérer le vendredi soir les ventes de garage du samedi à Mount Pleasant et East Van avec du jardin ou du camping."
+  },
+  {
+   "id": "P3",
+   "text": "Ajouter une petite veille de vélos de qualité à petit prix."
+  }
+ ],
+ "rules": [
+  "Annonces 2 fois par jour (6 h et 19 h), magasins le jeudi à 7 h (28 sept.)",
+  "Courriel seulement quand il y a une aubaine (28 sept.)"
+ ]
 }
