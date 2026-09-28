@@ -60,7 +60,7 @@
 
   .card{position:relative;background:var(--surface);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 var(--line)}
   .card:focus-visible{outline:3px solid var(--moss);outline-offset:2px}
-  .ph{aspect-ratio:1/1;background:var(--chip);position:relative;overflow:hidden}
+  .ph{aspect-ratio:4/3;background:var(--chip);position:relative;overflow:hidden}
   .ph img{width:100%;height:100%;object-fit:cover}
   .ph .noimg{position:absolute;inset:0;display:grid;place-items:center;font-size:34px;opacity:.55}
   .price{position:absolute;left:8px;bottom:8px;background:var(--surface);color:var(--ink);font:700 13px Figtree,sans-serif;padding:3px 8px;border-radius:8px;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.18)}
@@ -129,7 +129,7 @@ function card(it, sec){
   const img = it.img
     ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.img) + '" alt="" onerror="this.remove()">'
     : '';
-  const badges = (it.star ? '<span class="b star">★ Coup de cœur</span>' : '<span></span>')
+  const badges = (it.star ? '<span class="b star">★ Top</span>' : '<span></span>')
                + (it.batch === data.batch ? '<span class="b new">Nouveau</span>' : '');
   return '<a class="card" style="--c:var(' + sec.c + ')" href="' + esc(it.url) + '" target="_blank" rel="noopener">'
     + '<div class="ph"><div class="noimg">' + sec.ico + '</div>' + img
