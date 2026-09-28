@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trouvailles">
+<meta name="theme-color" content="#1f3b2d">
+<title>Trouvailles Vancouver</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Palette : forêt de cèdres, mousse, bois, brume du Pacifique */
+  :root{
+    --bg:#f3f1ea; --surface:#fffdf8; --ink:#1d2621; --muted:#5d6760; --line:#e2ddd0;
+    --forest:#1f3b2d; --moss:#2f7a4d; --amber:#b5591a; --plum:#6b4f9e; --sky:#2c6e8f; --clay:#8a5a44;
+    --chip:#e9e5d8; --free:#2f7a4d; --sale:#b5591a;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121714; --surface:#1b221e; --ink:#eef0ea; --muted:#a4ada6; --line:#2b3530;
+      --forest:#0e1a14; --moss:#5fbf86; --amber:#f09a5a; --plum:#b69ae8; --sky:#6fb3d6; --clay:#d59a7c;
+      --chip:#26302a; --free:#6fd495; --sale:#f5a468;
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font:15px/1.4 Figtree,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px)}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+
+  header{background:var(--forest);color:#f3f1ea;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px 16px}
+  .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;max-width:960px;margin:0 auto}
+  h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:28px;letter-spacing:-.01em;margin:0;line-height:1.1}
+  .stamp{font-size:12px;opacity:.8;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .lede{max-width:960px;margin:8px auto 0;font-size:14px;opacity:.9;text-wrap:balance}
+
+  nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;max-width:960px;margin:0 auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:0;background:var(--chip);color:var(--ink);font:600 13px Figtree,sans-serif;padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .chip .n{opacity:.6;margin-left:4px;font-variant-numeric:tabular-nums}
+
+  main{max-width:960px;margin:0 auto;padding:4px 16px 32px}
+  section{margin-top:18px}
+  .sec-h{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+  .sec-h h2{font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:600;margin:0}
+  .sec-h .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
+  .sec-h .count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  @media (min-width:640px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+  .card{position:relative;background:var(--surface);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 var(--line)}
+  .card:focus-visible{outline:3px solid var(--moss);outline-offset:2px}
+  .ph{aspect-ratio:1/1;background:var(--chip);position:relative;overflow:hidden}
+  .ph img{width:100%;height:100%;object-fit:cover}
+  .ph .noimg{position:absolute;inset:0;display:grid;place-items:center;font-size:34px;opacity:.55}
+  .price{position:absolute;left:8px;bottom:8px;background:var(--surface);color:var(--ink);font:700 13px Figtree,sans-serif;padding:3px 8px;border-radius:8px;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .price.free{background:var(--free);color:#fff}
+  .price.sale{background:var(--sale);color:#fff}
+  .price s{opacity:.75;font-weight:500;margin-left:4px}
+  .badges{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:6px}
+  .b{font:700 10.5px Figtree,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:3px 6px;border-radius:6px;background:rgba(20,28,24,.72);color:#fff}
+  .b.new{background:var(--amber)}
+  .b.star{background:#f2c14e;color:#3a2c05}
+  .body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px;flex:1}
+  .num{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .t{font-weight:700;font-size:14px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .meta{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .note{font-size:12.5px;color:var(--ink);opacity:.85;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .src{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+
+  .events{display:flex;flex-direction:column;gap:8px}
+  .ev{background:var(--surface);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+  .ev .d{flex:none;width:48px;text-align:center;border-radius:8px;background:var(--chip);padding:4px 0;font-weight:700;font-size:12px;line-height:1.15}
+
+  .empty{background:var(--surface);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
+  footer{max-width:960px;margin:0 auto;padding:0 16px 28px;color:var(--muted);font-size:12px}
+  footer p{margin:6px 0}
+  @media (prefers-reduced-motion:no-preference){.card{transition:transform .12s}.card:active{transform:scale(.98)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>Trouvailles</h1><div class="stamp" id="stamp">chargement…</div></div>
+  <p class="lede" id="lede">Gratuit, bonnes affaires et soldes du Grand Vancouver, triés deux fois par jour.</p>
+</header>
+<nav><div class="chips" id="chips" role="toolbar" aria-label="Filtrer par section"></div></nav>
+<main id="main"></main>
+<footer>
+  <p id="foot"></p>
+  <p>Astuce iPhone : Safari, bouton Partager, « Sur l'écran d'accueil ».</p>
+</footer>
+<script>
+// Sections : identifiant, libellé, couleur, icône de secours
+const SECTIONS = [
+  {id:"jardin",   label:"Gratuit : jardin",           c:"--moss",  ico:"🌱"},
+  {id:"camping",  label:"Gratuit : camping",          c:"--sky",   ico:"🏕️"},
+  {id:"sofa",     label:"Gratuit : sofa-lits",        c:"--clay",  ico:"🛋️"},
+  {id:"coeur",    label:"Coups de cœur",              c:"--plum",  ico:"💎"},
+  {id:"magasin",  label:"Soldes en magasin",          c:"--amber", ico:"🏷️"},
+  {id:"evenement",label:"Ventes et événements",       c:"--forest",ico:"📅"},
+  {id:"autre",    label:"Autres trouvailles",         c:"--muted", ico:"✨"}
+];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let data = null, filter = "tout";
+
+// Formate une date ISO en heure de Vancouver
+function fmt(iso, opts){
+  try { return new Intl.DateTimeFormat("fr-CA", Object.assign({timeZone:"America/Vancouver"}, opts)).format(new Date(iso)); }
+  catch(e){ return ""; }
+}
+
+function priceHtml(it){
+  if (it.priceType === "free") return '<span class="price free">Gratuit</span>';
+  if (it.priceType === "sale") return '<span class="price sale">' + esc(it.price) + (it.oldPrice ? '<s>' + esc(it.oldPrice) + '</s>' : '') + '</span>';
+  return it.price ? '<span class="price">' + esc(it.price) + '</span>' : '';
+}
+
+function card(it, sec){
+  const img = it.img
+    ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.img) + '" alt="" onerror="this.remove()">'
+    : '';
+  const badges = (it.star ? '<span class="b star">★ Coup de cœur</span>' : '<span></span>')
+               + (it.batch === data.batch ? '<span class="b new">Nouveau</span>' : '');
+  return '<a class="card" style="--c:var(' + sec.c + ')" href="' + esc(it.url) + '" target="_blank" rel="noopener">'
+    + '<div class="ph"><div class="noimg">' + sec.ico + '</div>' + img
+    + '<div class="badges">' + badges + '</div>' + priceHtml(it) + '</div>'
+    + '<div class="body"><span class="src">' + esc(it.source) + '</span>'
+    + '<span class="t">' + esc(it.title) + '</span>'
+    + '<span class="meta">' + esc(it.place) + (it.discount ? ' · ' + esc(it.discount) : '') + '</span>'
+    + (it.note ? '<span class="note">' + esc(it.note) + '</span>' : '')
+    + '<span class="num">n° ' + esc(it.n) + (it.seen ? ' · vu ' + fmt(it.seen,{weekday:"short",hour:"numeric",minute:"2-digit"}) : '') + '</span>'
+    + '</div></a>';
+}
+
+function eventRow(it){
+  const d = it.date ? esc(it.date) : "📅";
+  return '<a class="ev" href="' + esc(it.url) + '" target="_blank" rel="noopener"><span class="d">' + d + '</span>'
+    + '<span><span class="t">' + esc(it.title) + '</span><br><span class="meta">' + esc(it.place) + '</span>'
+    + (it.note ? '<br><span class="note">' + esc(it.note) + '</span>' : '') + '</span></a>';
+}
+
+function render(){
+  const items = data.items || [];
+  const counts = {};
+  items.forEach(i => counts[i.section] = (counts[i.section] || 0) + 1);
+  const newCount = items.filter(i => i.batch === data.batch).length;
+
+  // Puces de filtre
+  const chips = [{id:"tout", label:"Tout", n:items.length}, {id:"nouveau", label:"Nouveau", n:newCount}]
+    .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.label, n:counts[s.id]})));
+  document.getElementById("chips").innerHTML = chips.map(c =>
+    '<button class="chip" id="f-' + c.id + '" aria-pressed="' + (filter === c.id) + '" data-f="' + c.id + '">'
+    + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("");
+
+  // Sections
+  const shown = items.filter(i => filter === "tout" || (filter === "nouveau" ? i.batch === data.batch : i.section === filter));
+  const html = SECTIONS.map(sec => {
+    const list = shown.filter(i => i.section === sec.id);
+    if (!list.length) return "";
+    const inner = sec.id === "evenement"
+      ? '<div class="events">' + list.map(eventRow).join("") + '</div>'
+      : '<div class="grid">' + list.map(i => card(i, sec)).join("") + '</div>';
+    return '<section style="--c:var(' + sec.c + ')"><div class="sec-h"><span class="dot"></span><h2>' + esc(sec.label)
+      + '</h2><span class="count">' + list.length + '</span></div>' + inner + '</section>';
+  }).join("");
+  document.getElementById("main").innerHTML = html || '<div class="empty">Rien de nouveau pour ce filtre.</div>';
+
+  document.getElementById("stamp").innerHTML = "Mis à jour<br>" + esc(fmt(data.updated,{weekday:"long",hour:"numeric",minute:"2-digit"}));
+  if (data.lede) document.getElementById("lede").textContent = data.lede;
+  document.getElementById("foot").textContent = items.length + " annonces des 3 derniers jours, dont " + newCount + " nouvelles au dernier passage.";
+}
+
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest("button[data-f]");
+  if (!b) return;
+  filter = b.dataset.f;
+  try { localStorage.setItem("filtre", filter); } catch(_) {}
+  render();
+  window.scrollTo({top: document.querySelector("nav").offsetTop, behavior: "smooth"});
+});
+
+try { filter = localStorage.getItem("filtre") || "tout"; } catch(_) {}
+
+// Anti-cache : on recharge toujours la dernière version des données
+fetch("data.json?v=" + Date.now(), {cache:"no-store"})
+  .then(r => r.json())
+  .then(d => { data = d; if (filter !== "tout" && filter !== "nouveau" && !(d.items||[]).some(i => i.section === filter)) filter = "tout"; render(); })
+  .catch(() => { document.getElementById("main").innerHTML = '<div class="empty">Impossible de charger les annonces. Réessaie dans un instant.</div>'; });
+</script>
+</body>
+</html>
