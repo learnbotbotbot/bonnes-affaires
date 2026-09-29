@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="Trouvailles">
 <meta name="theme-color" content="#1f3b2d">
 <title>Trouvailles Vancouver</title>
-<link rel="apple-touch-icon" href="icon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -430,6 +432,9 @@ fetch(SB + "/trouvailles_etat?id=eq.1&select=data", {headers:{"apikey":SB_KEY,"A
     setTimeout(() => ls.set("vu", latest), 4000);
   })
   .catch(() => { document.getElementById("main").innerHTML = '<div class="empty" style="margin-top:18px">Impossible de charger les trouvailles. Réessaie dans un instant.</div>'; });
+
+// App installable : service worker (silencieux s'il n'est pas pris en charge)
+try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {}); } catch(_) {}
 </script>
 </body>
 </html>
