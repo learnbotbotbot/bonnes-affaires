@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trouvailles">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#e6ebe3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1511" media="(prefers-color-scheme: dark)">
+<title>Trouvailles</title>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<style>
+  /* Trouvailles, version 3 : calme, lisible d'une main, l'étiquette de prix façon vente de garage comme seul élément fort */
+  :root{
+    --bg:#e6ebe3; --card:#fbfcf9; --ink:#16251c; --muted:#5a685f; --line:rgba(22,37,28,.11);
+    --forest:#1f3b2d; --leaf:#2f8f57; --warn:#b4541c;
+    --dot-free:#8fdc62; --dot-free-ink:#15360e; --dot-price:#ffd23f; --dot-price-ink:#3b2b00;
+    --soft:#eef2eb; --shadow:0 1px 0 rgba(22,37,28,.04), 0 6px 18px -10px rgba(22,37,28,.28);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1511; --card:#16201b; --ink:#e9f0eb; --muted:#9daea3; --line:rgba(255,255,255,.09);
+      --leaf:#6fd49a; --warn:#ffa36b; --soft:#1d2923;
+      --shadow:0 1px 0 rgba(0,0,0,.3), 0 8px 22px -12px rgba(0,0,0,.8);
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg)}
+  body{color:var(--ink);font:15px/1.42 "Bricolage Grotesque",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;font-optical-sizing:auto;-webkit-font-smoothing:antialiased;
+       padding-bottom:calc(env(safe-area-inset-bottom,0px) + 86px);min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  button,input,select,textarea{font:inherit;color:inherit}
+  img{display:block;max-width:100%}
+  :focus-visible{outline:3px solid var(--leaf);outline-offset:2px;border-radius:8px}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+  /* En-tête */
+  .top{padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:4px}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .mark{margin:0;font-size:34px;line-height:1;font-weight:800;letter-spacing:-.035em;font-variation-settings:"opsz" 96;color:var(--forest)}
+  @media (prefers-color-scheme: dark){.mark{color:var(--ink)}}
+  .me{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;cursor:pointer;min-height:40px}
+  .status{margin:8px 0 0;font-size:13px;color:var(--muted)}
+  .status b{color:var(--ink);font-weight:600}
+  .lede{margin:14px 0 0;font-size:17px;line-height:1.35;font-weight:500;text-wrap:pretty}
+
+  /* Filtres collants */
+  .filters{position:sticky;top:0;z-index:5;margin:14px -16px 0;padding:calc(env(safe-area-inset-top,0px) + 6px) 16px 8px;
+           background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 13px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;min-height:38px}
+  .chip .n{color:var(--muted);margin-left:5px;font-variant-numeric:tabular-nums;font-weight:500}
+  .chip[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:#fff}
+  .chip[aria-pressed="true"] .n{color:rgba(255,255,255,.7)}
+  @media (prefers-color-scheme: dark){.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}.chip[aria-pressed="true"] .n{color:inherit;opacity:.6}}
+  .sortrow{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--muted)}
+  .seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
+  .seg button{border:0;background:transparent;border-radius:999px;padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+  .seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+
+  /* Groupes */
+  .grp{margin-top:18px}
+  .grp h2{margin:0 0 8px;font-size:20px;font-weight:750;letter-spacing:-.02em;display:flex;align-items:baseline;gap:8px}
+  .grp h2 small{font-size:13px;font-weight:500;color:var(--muted)}
+  .items{display:grid;gap:10px}
+  @media (min-width:700px){.items{grid-template-columns:1fr 1fr}}
+
+  /* Carte d'une trouvaille */
+  .item{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:10px;display:grid;grid-template-columns:112px 1fr;gap:4px 12px;position:relative}
+  .item.flash{animation:flash .9s ease}
+  @keyframes flash{0%{box-shadow:0 0 0 3px var(--leaf)}100%{box-shadow:var(--shadow)}}
+  .ph{grid-row:span 2;position:relative;width:112px;height:112px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:36px}
+  .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
+  /* L'étiquette ronde de vente de garage : le seul élément fort de la page */
+  .dot{position:absolute;z-index:2;right:-6px;bottom:-6px;min-width:58px;height:58px;padding:0 8px;border-radius:999px;display:grid;place-items:center;
+       font-weight:800;font-size:15px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;transform:rotate(-9deg);
+       box-shadow:0 2px 0 rgba(0,0,0,.08),0 4px 10px -4px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.55)}
+  .dot.free{background:var(--dot-free);color:var(--dot-free-ink);font-size:13.5px}
+  .dot.price{background:var(--dot-price);color:var(--dot-price-ink)}
+  .new{position:absolute;z-index:2;left:6px;top:6px;background:var(--forest);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px}
+  .info{min-width:0;display:flex;flex-direction:column;gap:2px;padding-top:2px}
+  .t{font-weight:700;font-size:16px;line-height:1.22;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .t .bell{margin-right:4px}
+  .where{margin:0;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trip{margin:0;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .total{margin:0;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .age{margin:0;font-size:12.5px;color:var(--muted)}
+  .age.hot{color:var(--leaf);font-weight:600}
+  .age.late{color:var(--warn);font-weight:600}
+  .note{grid-column:1 / -1;margin:4px 2px 0;font-size:13.5px;line-height:1.38;color:var(--ink);opacity:.85}
+  .fans{grid-column:1 / -1;margin:2px 2px 0;font-size:12.5px;color:var(--leaf);font-weight:600}
+  .acts{grid-column:1 / -1;display:flex;gap:6px;margin-top:8px}
+  .acts button,.acts a{flex:1;min-height:42px;border:1px solid var(--line);background:transparent;border-radius:12px;font-weight:650;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 6px;white-space:nowrap}
+  .acts .want[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:#fff}
+  @media (prefers-color-scheme: dark){.acts .want[aria-pressed="true"]{background:var(--leaf);border-color:var(--leaf);color:#0d1511}}
+  .acts .main{background:var(--forest);border-color:var(--forest);color:#fff}
+  @media (prefers-color-scheme: dark){.acts .main{background:var(--leaf);border-color:var(--leaf);color:#0d1511}}
+  .acts button:active,.acts a:active,.chip:active{transform:scale(.97)}
+  .want[aria-pressed="true"] .heart{animation:pop .45s cubic-bezier(.2,.9,.3,1.6)}
+  @keyframes pop{0%{transform:scale(.5)}100%{transform:scale(1)}}
+
+  .muted{color:var(--muted)}
+  .empty{background:var(--card);border-radius:18px;padding:22px 18px;text-align:center;color:var(--muted);margin-top:18px;box-shadow:var(--shadow)}
+  .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+  .linkbtn{border:0;background:none;color:var(--leaf);font-weight:700;cursor:pointer;padding:8px 0}
+  .hidden-note{text-align:center;font-size:13px;color:var(--muted);margin:16px 0 0}
+
+  /* Notre liste */
+  .head2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px}
+  .head2 h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-.03em}
+  .bigbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:0;border-radius:14px;background:var(--forest);color:#fff;font-weight:750;font-size:16px;cursor:pointer;margin-top:12px}
+  @media (prefers-color-scheme: dark){.bigbtn{background:var(--leaf);color:#0d1511}}
+  .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+
+  /* Recherches et réglages */
+  .panel{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:6px 14px;margin-top:10px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .lbl{min-width:0}
+  .row .lbl b{display:block;font-weight:650}
+  .row .lbl small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+  .x{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:15px;color:var(--muted)}
+  .pend{font-size:11.5px;font-weight:700;color:var(--warn);white-space:nowrap}
+  .sec-t{margin:22px 2px 0;font-size:20px;font-weight:750;letter-spacing:-.02em}
+  .sec-p{margin:4px 2px 0;font-size:13.5px;color:var(--muted)}
+  .add{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 0}
+  .add input,.add select,textarea,.num{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;font-size:16px;min-width:0}
+  .add .full{grid-column:1 / -1}
+  .add button,.send{border:0;border-radius:12px;background:var(--forest);color:#fff;font-weight:700;padding:0 16px;min-height:46px;cursor:pointer}
+  @media (prefers-color-scheme: dark){.add button,.send{background:var(--leaf);color:#0d1511}}
+  textarea{width:100%;min-height:80px;resize:vertical;margin-top:12px;font-size:16px}
+  .send{width:100%;margin:8px 0 12px}
+  .num{width:92px;text-align:right;padding:9px 10px}
+  .sw{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;flex:none;border:0;margin:0;transition:background .2s}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.2,.9,.3,1.2)}
+  .sw:checked{background:#34c759}
+  .sw:checked::after{transform:translateX(20px)}
+  .pick{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
+  .pick button{border:0;background:transparent;border-radius:999px;padding:7px 14px;font-weight:650;cursor:pointer;color:var(--muted)}
+  .pick button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .prop{padding:12px 0;border-bottom:1px solid var(--line)}
+  .prop:last-child{border-bottom:0}
+  .prop p{margin:0 0 8px}
+  .yn{display:flex;gap:8px}
+  .yn button{flex:1;min-height:40px;border:1px solid var(--line);background:transparent;border-radius:12px;font-weight:650;cursor:pointer}
+  .yn button[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:#fff}
+  details{padding:12px 0}
+  summary{cursor:pointer;font-weight:650}
+  details ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:13.5px}
+  details li{margin:3px 0}
+
+  /* Barre d'onglets, à portée de pouce */
+  .tabs{position:fixed;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:min(calc(100% - 24px),440px);
+        display:grid;grid-template-columns:repeat(3,1fr);padding:5px;border-radius:22px;background:color-mix(in srgb,var(--forest) 92%,transparent);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);box-shadow:0 12px 30px -12px rgba(0,0,0,.5)}
+  .tabs button{border:0;background:transparent;color:rgba(255,255,255,.72);border-radius:17px;padding:7px 4px 6px;font-size:12px;font-weight:650;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;min-height:52px}
+  .tabs button svg{width:22px;height:22px}
+  .tabs button[aria-selected="true"]{background:rgba(255,255,255,.14);color:#fff}
+  .badge{position:absolute;top:3px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--dot-price);color:var(--dot-price-ink);font-size:11px;font-weight:800;display:grid;place-items:center}
+
+  .toast{position:fixed;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 82px);max-width:calc(100% - 32px);
+         background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:650;font-size:14px;box-shadow:0 10px 24px -10px rgba(0,0,0,.5)}
+  dialog{border:0;border-radius:22px;padding:20px;width:min(92vw,380px);background:var(--card);color:var(--ink);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
+  dialog::backdrop{background:rgba(0,0,0,.35)}
+  dialog h3{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.02em}
+  dialog p{margin:0 0 12px;color:var(--muted);font-size:14px}
+  dialog input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;font-size:16px;margin-top:10px}
+  .dlg-acts{display:flex;gap:8px;margin-top:14px}
+  .dlg-acts button{flex:1;min-height:46px;border:0;border-radius:12px;font-weight:700;cursor:pointer}
+  .dlg-acts .ok{background:var(--forest);color:#fff}
+  .dlg-acts .no{background:var(--soft)}
+  .err{color:var(--warn);font-size:13px;font-weight:700;margin-top:8px}
+  .beta{margin:26px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top wrap">
+  <div class="bar"><h1 class="mark">Trouvailles</h1><button class="me" id="me" aria-label="Qui utilise ce téléphone">Qui es-tu ?</button></div>
+  <p class="status" id="status">Chargement…</p>
+</header>
+
+<!-- Onglet 1 : les trouvailles -->
+<main class="wrap view" id="v-feed">
+  <p class="lede" id="lede"></p>
+  <div class="filters">
+    <div class="chips" id="chips" role="toolbar" aria-label="Filtrer"></div>
+    <div class="sortrow"><span id="count"></span>
+      <div class="seg" role="group" aria-label="Trier"><button data-sort="recent">Récent</button><button data-sort="proche">Plus proche</button></div>
+    </div>
+  </div>
+  <div id="feed"></div>
+  <p class="hidden-note" id="hidden-note" hidden></p>
+</main>
+
+<!-- Onglet 2 : notre liste -->
+<main class="wrap view" id="v-list" hidden>
+  <div class="head2"><h2>Notre liste</h2></div>
+  <p class="hint">Ce que l'un de vous deux veut aller chercher. Trouvailles la garde à jour sur vos deux téléphones.</p>
+  <div id="list"></div>
+</main>
+
+<!-- Onglet 3 : recherches et réglages -->
+<main class="wrap view" id="v-search" hidden>
+  <h2 class="sec-t">Ce que Trouvailles cherche</h2>
+  <p class="sec-p">Partout dans Metro Vancouver, sur Craigslist, Kijiji et Trash Nothing, trois fois par jour.</p>
+  <div class="panel">
+    <div id="searches"></div>
+    <form class="add" id="add-form">
+      <input id="add-q" placeholder="Ajouter : kayak, vélo pour Zoé…" autocomplete="off" enterkeyhint="done" aria-label="Nouvelle recherche">
+      <button type="submit">Ajouter</button>
+      <select id="add-b" class="full" aria-label="Budget">
+        <option value="gratuit seulement">Gratuit seulement</option>
+        <option value="50 $ max" selected>Gratuit ou jusqu'à 50 $</option>
+        <option value="150 $ max">Gratuit ou jusqu'à 150 $</option>
+        <option value="300 $ max">Gratuit ou jusqu'à 300 $</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="panel">
+    <label class="row"><span class="lbl"><b>Mode auto</b><small>En plus de vos recherches, Trouvailles ajoute jusqu'à 3 trouvailles de son choix par passage, d'après vos « Je le veux » et « Pas pour nous ».</small></span>
+      <input type="checkbox" class="sw" id="auto"></label>
+  </div>
+
+  <section id="props-sec" hidden>
+    <h2 class="sec-t">Trouvailles propose</h2>
+    <div class="panel" id="props"></div>
+  </section>
+
+  <h2 class="sec-t">Autre consigne</h2>
+  <div class="panel">
+    <textarea id="idea" maxlength="600" placeholder="Ex. : pas de futons en métal, plus de plantes d'intérieur…" aria-label="Consigne pour Trouvailles"></textarea>
+    <button class="send" id="send-idea">Envoyer à Trouvailles</button>
+    <details id="rules-box" hidden><summary>Ce que Trouvailles a retenu</summary><ul id="rules"></ul></details>
+  </div>
+
+  <h2 class="sec-t">Trajets</h2>
+  <p class="sec-p">Coût d'essence aller-retour depuis Mount Pleasant, avec le Forester.</p>
+  <div class="panel">
+    <div class="row"><span class="lbl"><b>Essence</b><small id="gas-src">Prix du jour à Vancouver</small></span>
+      <input class="num" type="number" id="gas" step="0.01" min="0.5" max="4" inputmode="decimal" aria-label="Prix de l'essence en dollars par litre"></div>
+    <div class="row"><span class="lbl"><b>Consommation</b><small>L/100 km, Forester 2001 en ville ≈ 12</small></span>
+      <input class="num" type="number" id="conso" step="0.1" min="4" max="25" inputmode="decimal" aria-label="Consommation en litres aux 100 km"></div>
+    <div class="row"><span class="lbl"><b>Ce téléphone</b><small>Pour savoir à qui envoyer une trouvaille</small></span>
+      <div class="pick" id="who-pick"><button data-who="Adil">Adil</button><button data-who="Zoé">Zoé</button></div></div>
+  </div>
+  <p class="beta">Version bêta. La page actuelle reste en place tant que celle-ci n'est pas validée.</p>
+</main>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="feed" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>Trouvailles</button>
+  <button role="tab" data-tab="list" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>Notre liste<span class="badge" id="badge" hidden></span></button>
+  <button role="tab" data-tab="search" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Recherches</button>
+</nav>
+
+<dialog id="login" aria-labelledby="login-h">
+  <form id="login-form" novalidate>
+    <h3 id="login-h">Qui es-tu ?</h3>
+    <p>Une seule fois sur ce téléphone : ton prénom et le code, pour que Trouvailles sache que c'est bien vous.</p>
+    <div class="pick" id="login-pick"><button type="button" data-who="Adil">Adil</button><button type="button" data-who="Zoé">Zoé</button></div>
+    <input id="code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Code" aria-label="Code">
+    <div class="err" id="login-err" role="alert" hidden></div>
+    <div class="dlg-acts"><button type="button" class="no" id="login-cancel">Plus tard</button><button type="submit" class="ok">Valider</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+// ---------- Connexion à Supabase (lecture publique ; les réponses passent par des fonctions protégées par le code) ----------
+const SB_URL = "https://xjrjlxyvoxblckejvxtc.supabase.co";
+const SB = SB_URL + "/rest/v1";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcmpseHl2b3hibGNrZWp2eHRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjIxMzEsImV4cCI6MjA3OTY5ODEzMX0.RMuNeFG0RjuAafLThMcfKkdKQ2yQXilrqga9X9G8LCQ";
+const SB_HEADERS = {"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY,"Content-Type":"application/json"};
+
+// Sections connues ; tout le reste est rangé dans « Autres recherches »
+const SECTIONS = [
+  {id:"sofa",       label:"Lits convertibles", short:"Lits",        ico:"🛋️"},
+  {id:"jardin",     label:"Jardin",            short:"Jardin",      ico:"🌱"},
+  {id:"decouverte", label:"Découvertes",       short:"Découvertes", ico:"✨"},
+  {id:"autre",      label:"Autres recherches", short:"Autres",      ico:"🔎"}
+];
+const KNOWN = new Set(SECTIONS.map(s => s.id));
+const secOf = it => KNOWN.has(it.section) ? it.section : "autre";
+const SEC = id => SECTIONS.find(s => s.id === id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+// Stockage local (propre à ce téléphone)
+const ls = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(_) { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} }
+};
+
+let data = null, shared = [], tab = "feed";
+let code = ls.get("code", ""), who = ls.get("who", "");
+let mine = ls.get("mine", {});             // mes réponses : { n: "oui" | "non" | "pris" }
+let listOff = ls.get("listOff", {});       // retirés de la liste sur ce téléphone
+let pending = ls.get("pending", []);       // recherches et mode auto envoyés, pas encore pris en compte
+let filter = ls.get("filtre3", "tout"), sort = ls.get("tri", "recent");
+let prevVisit = ls.get("vu", null);
+let reg = Object.assign({conso:12, gas:null}, ls.get("reglages3", {}));   // gas = null : prix du jour
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2800);
+}
+function fmt(iso, opts){
+  try { return new Intl.DateTimeFormat("fr-CA", Object.assign({timeZone:"America/Vancouver"}, opts)).format(new Date(iso)); } catch(_) { return ""; }
+}
+const money = x => x.toFixed(2).replace(".", ",") + " $";
+const moneyR = x => x < 100 ? money(x) : Math.round(x) + " $";
+
+// ---------- Appels protégés ----------
+async function rpc(fn, args){
+  try {
+    const r = await fetch(SB + "/rpc/" + fn, {method:"POST", headers:SB_HEADERS, body:JSON.stringify(args)});
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(_) { return null; }
+}
+
+// Fenêtre « Qui es-tu ? » : prénom + code, une seule fois par téléphone
+function askIdentity(msg){
+  return new Promise(resolve => {
+    const dlg = document.getElementById("login"), err = document.getElementById("login-err"), input = document.getElementById("code");
+    let pick = who, done = false;
+    const close = () => { if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); };
+    const finish = v => { if (!done) { done = true; close(); resolve(v); } };
+    const paint = () => dlg.querySelectorAll("#login-pick button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === pick)));
+    paint(); input.value = code;
+    err.hidden = !msg; err.textContent = msg || "";
+    document.getElementById("login-pick").onclick = e => { const b = e.target.closest("button[data-who]"); if (b) { pick = b.dataset.who; paint(); } };
+    document.getElementById("login-cancel").onclick = () => finish(false);
+    dlg.oncancel = () => finish(false);
+    document.getElementById("login-form").onsubmit = async e => {
+      e.preventDefault();
+      const c = input.value.trim().toLowerCase();
+      if (!pick) { err.textContent = "Choisis Adil ou Zoé."; err.hidden = false; return; }
+      if (!c) { input.focus(); return; }
+      const ok = await rpc("trouvailles_verifier", {p_code: c});
+      if (ok === true) { code = c; ls.set("code", c); setWho(pick); finish(true); }
+      else { err.textContent = ok === null ? "Pas de connexion. Réessaie." : "Code incorrect."; err.hidden = false; }
+    };
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+  });
+}
+
+// Envoie une réponse à Trouvailles ; renvoie "ok", "annule" ou "erreur"
+async function sendBack(kind, value, n){
+  if (!code || !who) { if (!(await askIdentity())) return "annule"; }
+  const send = () => rpc("trouvailles_envoyer", {p_code: code, p_kind: kind, p_value: String(value).slice(0, 600), p_item_n: n ?? null, p_who: who || null});
+  let res = await send();
+  if (res === "code") {
+    code = ""; ls.set("code", "");
+    if (!(await askIdentity("Le code a changé : entre le nouveau."))) return "annule";
+    res = await send();
+  }
+  if (res === "ok") return "ok";
+  toast(res === "limite" ? "Trop de réponses d'un coup, réessaie plus tard." : "Pas de connexion. Réessaie dans un instant.");
+  return "erreur";
+}
+
+// ---------- Trajet : distance, temps, essence ----------
+// Distance routière approximative (km, aller simple) depuis Mount Pleasant
+const KM = {
+  "mount pleasant":1.5,"main street":2,"riley park":3,"fairview":2.5,"south cambie":4,"cambie":4,"chinatown":2.5,"strathcona":3,
+  "gastown":3.5,"yaletown":3,"downtown":4,"coal harbour":5,"west end":5,"kitsilano":5.5,"kits":5.5,"shaughnessy":5,
+  "grandview":3.5,"commercial":3.5,"hastings":5,"sunrise":6.5,"renfrew":6.5,"collingwood":7,"kensington":4.5,"cedar cottage":4.5,
+  "oakridge":7,"sunset":6.5,"fraserview":8.5,"killarney":9,"marpole":9.5,"kerrisdale":8,"arbutus":7,"dunbar":9,"point grey":9,
+  "ubc":13,"university endowment":12,"east van":4,"vancouver":5,
+  "burnaby heights":9,"capitol hill":10,"brentwood":11,"metrotown":10,"deer lake":11,"edmonds":13,"highgate":13,"lougheed":16,"sfu":17,"burnaby":12,
+  "new westminster":18,"new west":18,"queensborough":20,"sapperton":18,
+  "richmond":15,"brighouse":14,"ironwood":20,"steveston":22,"sea island":13,
+  "north vancouver":12,"north van":12,"lonsdale":11,"lynn valley":16,"deep cove":22,"edgemont":15,"west vancouver":16,"west van":16,"ambleside":13,"dundarave":15,"horseshoe bay":27,
+  "burquitlam":19,"maillardville":21,"westwood plateau":27,"coquitlam":25,"port moody":25,"port coquitlam":31,"anmore":31,"belcarra":32,
+  "whalley":27,"guildford":30,"fleetwood":33,"newton":33,"cloverdale":40,"south surrey":42,"surrey":30,
+  "north delta":22,"ladner":30,"tsawwassen":36,"delta":25,
+  "langley":45,"white rock":45,"maple ridge":46,"pitt meadows":40,"lions bay":30,"squamish":66,"abbotsford":70
+};
+const KM_KEYS = Object.keys(KM).sort((a, b) => b.length - a.length);
+const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function kmFor(place){
+  const p = norm(place);
+  if (!p || /en ligne|online/.test(p)) return null;
+  const k = KM_KEYS.find(k => p.includes(k));
+  return k ? KM[k] : null;
+}
+// Temps d'auto approximatif (aller simple) : ville jusqu'à 12 km, autoroute ensuite
+const minutesFor = km => Math.round(km <= 12 ? 4 + km * 1.6 : 23 + (km - 12) * 1.0);
+// Prix de l'essence : réglage manuel, sinon prix du jour publié par Trouvailles, sinon dernier prix connu
+const gasPrice = () => reg.gas || (data && data.essence && Number(data.essence.prix)) || 2.03;
+function num(v){
+  if (v == null) return null;
+  const m = String(v).replace(/\s| /g, "").replace(",", ".").match(/\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+function trip(it){
+  const km = kmFor(it.place);
+  if (km == null) return null;
+  const cost = km * 2 * (reg.conso / 100) * gasPrice();
+  const price = it.priceType === "free" ? 0 : num(it.price);
+  return {km, min: minutesFor(km), cost, total: price ? price + cost : null};
+}
+
+// ---------- Votes partagés (Adil et Zoé voient les réponses de l'autre) ----------
+async function loadShared(){
+  if (!code) return;
+  const r = await rpc("trouvailles_votes", {p_code: code});
+  if (Array.isArray(r)) shared = r;
+}
+function votesOf(n){
+  const out = {oui:new Set(), non:new Set(), pris:new Set()};
+  shared.forEach(v => { if (v.item_n === n && out[v.value]) out[v.value].add(v.who || "?"); });
+  if (mine[n] && out[mine[n]]) out[mine[n]].add(who || "moi");
+  return out;
+}
+const other = () => who === "Adil" ? "Zoé" : who === "Zoé" ? "Adil" : "";
+const isGone = it => votesOf(it.n).pris.size > 0;
+const isHidden = it => mine[it.n] === "non";
+const inList = it => !isGone(it) && !listOff[it.n] && (votesOf(it.n).oui.size > 0 || it.liste === true);
+const isNew = it => prevVisit ? (it.batch || "") > prevVisit : it.batch === data.batch;
+
+// ---------- Rendu ----------
+function freshness(it){
+  if (!it.seen) return null;
+  const h = (Date.now() - new Date(it.seen).getTime()) / 36e5;
+  if (!(h >= 0)) return null;
+  const [a, b] = it.priceType === "free" ? [3, 12] : [24, 72];
+  const txt = h < 1 ? "Repéré à l'instant" : h < 24 ? "Repéré il y a " + Math.round(h) + " h" : "Repéré il y a " + Math.round(h / 24) + " j";
+  const cls = h < a ? "hot" : h < b ? "" : "late";
+  return {txt: txt + (cls === "late" && it.priceType === "free" ? ", sûrement parti" : ""), cls};
+}
+
+function card(it, mode){
+  const sec = SEC(secOf(it));
+  const v = votesOf(it.n), t = trip(it), f = freshness(it);
+  const dot = it.priceType === "free" ? '<span class="dot free">Gratuit</span>' : (it.price ? '<span class="dot price">' + esc(it.price) + '</span>' : "");
+  const img = it.img ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.img) + '" alt="" onerror="this.remove()">' : "";
+  const fans = [...v.oui].filter(w => w !== who && w !== "moi");
+  let acts;
+  if (mode === "list") {
+    acts = '<a class="main" href="' + mapsOne(it) + '" target="_blank" rel="noopener">Itinéraire</a>'
+      + '<button data-act="msg" data-n="' + it.n + '">Message</button>'
+      + '<button data-act="pris" data-n="' + it.n + '">Pris ✓</button>'
+      + '<button data-act="off" data-n="' + it.n + '" aria-label="Retirer de la liste">Retirer</button>';
+  } else {
+    const wanted = mine[it.n] === "oui";
+    const to = other();
+    acts = '<button class="want" data-act="oui" data-n="' + it.n + '" aria-pressed="' + wanted + '"><span class="heart">♥</span> Je le veux</button>'
+      + '<button data-act="non" data-n="' + it.n + '">Pas pour nous</button>'
+      + '<button data-act="send" data-n="' + it.n + '">' + (to ? "À " + esc(to) : "Partager") + '</button>';
+  }
+  return '<article class="item" id="it-' + it.n + '">'
+    + '<a class="ph" href="' + esc(it.url) + '" target="_blank" rel="noopener" aria-label="Voir l\'annonce">' + sec.ico + img
+    + (mode !== "list" && isNew(it) ? '<span class="new">Nouveau</span>' : "") + dot + '</a>'
+    + '<div class="info">'
+    + '<a class="t" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + (it.star ? '<span class="bell" title="Alerte envoyée">🔔</span>' : "") + esc(it.title) + '</a>'
+    + '<p class="where">' + esc(it.place || "Lieu non précisé") + ', ' + esc(it.source || "") + '</p>'
+    + (t ? '<p class="trip">🚗 ' + t.min + ' min, ' + money(t.cost) + ' d\'essence A/R</p>' : "")
+    + (t && t.total ? '<p class="total">Total avec l\'essence : ' + moneyR(t.total) + '</p>' : "")
+    + (f ? '<p class="age ' + f.cls + '">' + f.txt + '</p>' : "")
+    + '</div>'
+    + (it.note ? '<p class="note">' + esc(it.note) + '</p>' : "")
+    + (fans.length ? '<p class="fans">♥ ' + esc(fans.join(" et ")) + (fans.length > 1 ? " le veulent" : " le veut") + '</p>' : "")
+    + '<div class="acts">' + acts + '</div></article>';
+}
+
+// Ordre : alertes, nouveautés, puis plus récentes ; ou par distance
+function ranker(){
+  if (sort === "proche") return (a, b) => ((trip(a) || {km:999}).km - (trip(b) || {km:999}).km) || ((b.n || 0) - (a.n || 0));
+  return (a, b) => (!!b.star - !!a.star) || (isNew(b) - isNew(a)) || ((b.n || 0) - (a.n || 0));
+}
+
+function render(){
+  if (!data) return;
+  const all = (data.items || []).filter(it => !isGone(it));
+  const visible = all.filter(it => !isHidden(it));
+  const counts = {}; visible.forEach(i => counts[secOf(i)] = (counts[secOf(i)] || 0) + 1);
+  const newN = visible.filter(isNew).length, freeN = visible.filter(i => i.priceType === "free").length;
+
+  // Filtres
+  const chips = [{id:"tout", label:"Tout", n:visible.length}]
+    .concat(newN ? [{id:"nouveau", label:"Nouveau", n:newN}] : [])
+    .concat([{id:"gratuit", label:"Gratuit", n:freeN}])
+    .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.short, n:counts[s.id]})));
+  if (!chips.some(c => c.id === filter)) filter = "tout";
+  document.getElementById("chips").innerHTML = chips.map(c =>
+    '<button class="chip" data-f="' + c.id + '" aria-pressed="' + (filter === c.id) + '">' + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("");
+  document.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
+
+  const match = i => filter === "tout" || (filter === "nouveau" ? isNew(i) : filter === "gratuit" ? i.priceType === "free" : secOf(i) === filter);
+  const shown = visible.filter(match).sort(ranker());
+  document.getElementById("count").textContent = shown.length + (shown.length > 1 ? " trouvailles" : " trouvaille");
+  let html;
+  if (!shown.length) {
+    html = '<div class="empty"><b>Rien ici pour l\'instant</b>Trouvailles repasse vers ' + nextRun() + '. Ajoute une recherche dans l\'onglet Recherches.</div>';
+  } else if (sort === "proche" || filter !== "tout") {
+    html = '<div class="grp"><div class="items">' + shown.map(i => card(i)).join("") + '</div></div>';
+  } else {
+    html = SECTIONS.map(s => {
+      const l = shown.filter(i => secOf(i) === s.id);
+      return l.length ? '<section class="grp"><h2>' + esc(s.label) + ' <small>' + l.length + '</small></h2><div class="items">' + l.map(i => card(i)).join("") + '</div></section>' : "";
+    }).join("");
+  }
+  document.getElementById("feed").innerHTML = html;
+  const hiddenN = all.length - visible.length;
+  const hn = document.getElementById("hidden-note");
+  hn.hidden = !hiddenN;
+  hn.innerHTML = hiddenN ? hiddenN + (hiddenN > 1 ? " trouvailles masquées" : " trouvaille masquée") + ' (« Pas pour nous »). <button class="linkbtn" id="unhide">Les réafficher</button>' : "";
+
+  // Notre liste
+  const list = all.filter(inList).sort((a, b) => ((trip(a) || {km:999}).km - (trip(b) || {km:999}).km));
+  const badge = document.getElementById("badge");
+  badge.hidden = !list.length; badge.textContent = list.length;
+  document.getElementById("list").innerHTML = list.length
+    ? (list.length > 1 ? '<a class="bigbtn" href="' + mapsTour(list) + '" target="_blank" rel="noopener">Faire la tournée (' + list.length + ' arrêts)</a>' : "")
+      + '<div class="items" style="margin-top:12px">' + list.map(i => card(i, "list")).join("") + '</div>'
+    : '<div class="empty"><b>Votre liste est vide</b>Touchez « Je le veux » sur une trouvaille : elle apparaît ici pour vous deux, avec l\'itinéraire et un message prêt pour le vendeur.</div>';
+
+  renderSearch();
+
+  renderStatus();
+  if (data.lede) document.getElementById("lede").textContent = data.lede;
+  document.getElementById("me").textContent = who || "Qui es-tu ?";
+}
+
+function renderStatus(){
+  const upd = data && data.updated ? ago(data.updated) : "";
+  document.getElementById("status").innerHTML = (upd ? "Mis à jour <b>" + upd + "</b>. " : "") + "Prochain passage vers " + nextRun() + ".";
+}
+function ago(iso){
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 2) return "à l'instant";
+  if (m < 60) return "il y a " + m + " min";
+  const h = Math.round(m / 60);
+  if (h < 24) return "il y a " + h + " h";
+  return fmt(iso, {weekday:"long", hour:"numeric", minute:"2-digit"});
+}
+// Passages vers 5 h 50, 11 h 50 et 18 h 50 (heure de Vancouver), publiés quelques minutes plus tard
+function nextRun(){
+  let now = 0;
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"America/Vancouver", hour:"numeric", minute:"numeric", hourCycle:"h23"}).formatToParts(new Date());
+    const get = t => Number((parts.find(x => x.type === t) || {}).value) || 0;
+    now = (get("hour") % 24) * 60 + get("minute");
+  } catch(_) {}
+  const slot = [355, 715, 1135].find(s => s > now);
+  return slot === 355 || slot === undefined ? "6 h" : slot === 715 ? "12 h" : "19 h";
+}
+
+// ---------- Liens Google Maps ----------
+const HOME = "Mount Pleasant, Vancouver, BC";
+const placeQ = it => (it.place || "") + ", BC";
+const mapsOne = it => "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(HOME) + "&destination=" + encodeURIComponent(placeQ(it)) + "&travelmode=driving";
+function mapsTour(list){
+  const stops = list.slice(0, 9).map(placeQ);
+  return "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(HOME) + "&destination=" + encodeURIComponent(HOME)
+    + "&waypoints=" + encodeURIComponent(stops.join("|")) + "&travelmode=driving";
+}
+
+// Message prêt pour le vendeur (en anglais, comme les annonces) ; pour un article payant, une offre à environ 80 %
+function sellerMsg(it){
+  const p = it.priceType === "free" ? 0 : num(it.price);
+  const offer = p && p >= 20 ? Math.max(5, Math.floor(p * 0.8 / 5) * 5) : null;
+  return "Hi! Is your " + (it.priceType === "free" ? "free " : "") + "listing still available? "
+    + (offer ? "Would you take $" + offer + "? " : "")
+    + "I can pick it up today, I'm in Mount Pleasant. Thanks!";
+}
+
+// ---------- Onglet Recherches ----------
+function rulesOf(re){ return (data.rules || []).filter(r => re.test(r)); }
+function renderSearch(){
+  const rules = data.rules || [];
+  // Une ligne « Recherche : quoi | budget (date) » par recherche ajoutée ; « Recherche retirée : quoi » pour arrêter
+  const strip = t => t.replace(/^[^:]*:\s*/, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const removed = rules.filter(r => /^recherche retir/i.test(r)).map(r => norm(strip(r).split("|")[0].trim()));
+  const gone = key => removed.includes(norm(key));
+  const rows = [];
+  if (!["lit convertible","lits convertibles","lit","sofa-lit","futon"].some(gone)) rows.push({label:"Lit convertible", sub:"Sofa-lit, futon, clic-clac, pull-out, daybed… gratuit ou jusqu'à 150 $", key:"lit convertible"});
+  if (!["jardin","jardinage","jardin et jardinage"].some(gone)) rows.push({label:"Jardin et jardinage", sub:"Pots, terre, plantes, outils, serre… gratuit ou jusqu'à 50 $", key:"jardin"});
+  rulesOf(/^recherche\s*:/i).forEach(r => {
+    const body = strip(r), [what, bud] = body.split("|").map(x => x.trim());
+    const date = (r.match(/\((\d{1,2}\s+[a-zéû.]+)\)\s*$/i) || [])[1];
+    if (what && !gone(what)) rows.push({label: what, sub: [bud, date ? "ajoutée le " + date : ""].filter(Boolean).join(", "), key: what});
+  });
+  // Changements envoyés mais pas encore pris en compte par Trouvailles
+  pending = pending.filter(p => !data.updated || new Date(p.at) > new Date(data.updated));
+  ls.set("pending", pending);
+  pending.filter(p => p.type === "add").forEach(p => rows.push({label:p.q, sub:p.b, key:p.q, pend:"au prochain passage"}));
+  const off = new Set(pending.filter(p => p.type === "del").map(p => norm(p.q)));
+  document.getElementById("searches").innerHTML = rows.map(r =>
+    '<div class="row"><span class="lbl"><b>' + esc(r.label) + '</b>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : "") + '</span>'
+    + (r.pend || off.has(norm(r.key)) ? '<span class="pend">' + (off.has(norm(r.key)) ? "retrait au prochain passage" : r.pend) + '</span>'
+       : '<button class="x" data-del="' + esc(r.key) + '" aria-label="Arrêter de chercher ' + esc(r.label) + '">✕</button>')
+    + '</div>').join("") || '<p class="hint" style="padding:12px 0">Aucune recherche active.</p>';
+
+  // Mode auto : état lu dans les consignes, ou changement en attente
+  const pa = pending.filter(p => p.type === "auto").pop();
+  const onRule = rules.some(r => /mode auto\s*:\s*activ/i.test(r));
+  document.getElementById("auto").checked = pa ? pa.on : onRule;
+
+  // Propositions de Trouvailles
+  const props = data.proposals || [];
+  document.getElementById("props-sec").hidden = !props.length;
+  document.getElementById("props").innerHTML = props.map(p => {
+    const v = mine["P:" + p.id] || "";
+    return '<div class="prop"><p>' + esc(p.text) + '</p><div class="yn">'
+      + '<button data-prop="' + esc(p.id) + '" data-v="oui" aria-pressed="' + (v === "oui") + '">Oui</button>'
+      + '<button data-prop="' + esc(p.id) + '" data-v="non" aria-pressed="' + (v === "non") + '">Non</button></div></div>';
+  }).join("");
+
+  // Ce que Trouvailles a retenu
+  document.getElementById("rules-box").hidden = !rules.length;
+  document.getElementById("rules").innerHTML = rules.map(r => '<li>' + esc(r) + '</li>').join("");
+
+  // Trajets
+  const g = document.getElementById("gas");
+  if (document.activeElement !== g) g.value = gasPrice().toFixed(2);
+  document.getElementById("gas-src").textContent = reg.gas ? "Réglé à la main (vide = prix du jour)"
+    : data.essence ? "Prix du jour à Vancouver (" + esc(data.essence.date || "") + ")" : "Dernier prix connu à Vancouver";
+  const c = document.getElementById("conso");
+  if (document.activeElement !== c) c.value = reg.conso;
+  document.querySelectorAll("#who-pick button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === who)));
+}
+
+function setWho(w){ who = w; ls.set("who", w); if (data) render(); }
+
+// ---------- Actions ----------
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+
+  // Onglets
+  if (b.dataset.tab) {
+    tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "v-" + tab);
+    window.scrollTo({top:0});
+    return;
+  }
+  if (b.dataset.f) { filter = b.dataset.f; ls.set("filtre3", filter); render(); return; }
+  if (b.dataset.sort) { sort = b.dataset.sort; ls.set("tri", sort); render(); return; }
+  if (b.id === "unhide") { Object.keys(mine).forEach(k => { if (mine[k] === "non") delete mine[k]; }); ls.set("mine", mine); render(); return; }
+  if (b.id === "me") { await askIdentity(); render(); return; }
+  if (b.dataset.who && b.closest("#who-pick")) { setWho(b.dataset.who); return; }
+
+  // Actions sur une trouvaille
+  const act = b.dataset.act;
+  if (act) {
+    const n = Number(b.dataset.n);
+    const it = (data.items || []).find(i => i.n === n);
+    if (!it) return;
+    if (act === "send") return sendToOther(it);
+    if (act === "msg") {
+      const txt = sellerMsg(it);
+      try { await navigator.clipboard.writeText(txt); toast("Message copié : colle-le dans l'annonce"); } catch(_) { toast(txt); }
+      setTimeout(() => window.open(it.url, "_blank", "noopener"), 700);
+      return;
+    }
+    if (act === "off") { listOff[n] = true; ls.set("listOff", listOff); render(); toast("Retiré de votre liste"); return; }
+    if (act === "oui" && mine[n] === "oui") {   // deuxième toucher : retire de la liste sur ce téléphone
+      delete mine[n]; ls.set("mine", mine); listOff[n] = true; ls.set("listOff", listOff); render(); return;
+    }
+    if (await sendBack("vote", act, n) === "ok") {
+      mine[n] = act; ls.set("mine", mine);
+      if (act === "oui") { delete listOff[n]; ls.set("listOff", listOff); }
+      render();
+      toast(act === "oui" ? "Ajouté à votre liste" : act === "non" ? "Masqué. Trouvailles en montrera moins de ce genre" : "Bravo ! Retiré pour vous deux");
+    }
+    return;
+  }
+
+  // Suppression d'une recherche
+  if (b.dataset.del) {
+    const q = b.dataset.del;
+    if (await sendBack("idee", "Recherche retirée : " + q) === "ok") {
+      pending.push({type:"del", q, at:new Date().toISOString()}); ls.set("pending", pending); render();
+      toast("Trouvailles arrêtera de chercher « " + q + " » au prochain passage");
+    }
+    return;
+  }
+  // Propositions
+  if (b.dataset.prop) {
+    if (await sendBack("proposition", b.dataset.prop + " " + b.dataset.v) === "ok") {
+      mine["P:" + b.dataset.prop] = b.dataset.v; ls.set("mine", mine); render(); toast("Merci, c'est noté");
+    }
+    return;
+  }
+  if (b.id === "send-idea") {
+    const ta = document.getElementById("idea"), v = ta.value.trim();
+    if (!v) { ta.focus(); return; }
+    if (await sendBack("idee", v) === "ok") { ta.value = ""; toast("Envoyé. Pris en compte au prochain passage"); }
+  }
+});
+
+// Envoyer une trouvaille à l'autre : notification sur son cell (sinon, feuille de partage du téléphone)
+async function sendToOther(it){
+  if (!who) { if (!(await askIdentity())) return; render(); }
+  const to = other();
+  if (code && to) {
+    try {
+      const r = await fetch(SB_URL + "/functions/v1/trouvailles-partager", {method:"POST", headers:SB_HEADERS, body:JSON.stringify({code, n: it.n, from: who})});
+      const j = r.ok ? await r.json() : null;
+      if (j && j.ok) { toast("Envoyé sur le cell de " + to); return; }
+    } catch(_) {}
+  }
+  const text = it.title + ", " + (it.priceType === "free" ? "gratuit" : (it.price || "")) + ", " + (it.place || "");
+  if (navigator.share) { try { await navigator.share({title: it.title, text, url: it.url}); } catch(_) {} return; }
+  try { await navigator.clipboard.writeText(text + " " + it.url); toast("Lien copié"); } catch(_) { toast(it.url); }
+}
+
+// Ajouter une recherche
+document.getElementById("add-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const inp = document.getElementById("add-q"), q = inp.value.trim(), bud = document.getElementById("add-b").value;
+  if (!q) { inp.focus(); return; }
+  if (await sendBack("idee", "Recherche : " + q + " | " + bud) === "ok") {
+    pending.push({type:"add", q, b:bud, at:new Date().toISOString()}); ls.set("pending", pending);
+    inp.value = ""; render(); toast("Ajouté. Trouvailles cherchera « " + q + " » dès le prochain passage");
+  }
+});
+
+// Mode auto
+document.getElementById("auto").addEventListener("change", async e => {
+  const on = e.target.checked;
+  if (await sendBack("idee", on ? "Mode auto : activé" : "Mode auto : désactivé") === "ok") {
+    pending.push({type:"auto", on, at:new Date().toISOString()}); ls.set("pending", pending);
+    toast(on ? "Mode auto activé dès le prochain passage" : "Mode auto désactivé");
+  } else e.target.checked = !on;
+});
+
+// Réglages de trajet (ce téléphone)
+document.getElementById("gas").addEventListener("change", e => {
+  const v = parseFloat(String(e.target.value).replace(",", "."));
+  reg.gas = !isNaN(v) && Math.abs(v - ((data && data.essence && Number(data.essence.prix)) || 0)) > 0.004 ? v : null;
+  ls.set("reglages3", reg); render();
+});
+document.getElementById("conso").addEventListener("change", e => {
+  const v = parseFloat(String(e.target.value).replace(",", "."));
+  if (!isNaN(v)) { reg.conso = v; ls.set("reglages3", reg); render(); }
+});
+
+// ---------- Chargement et mises à jour régulières ----------
+async function load(first){
+  try {
+    const r = await fetch(SB + "/trouvailles_etat?id=eq.1&select=data", {headers:{"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY}, cache:"no-store"});
+    if (!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    const d = rows && rows[0] && rows[0].data;
+    if (!d) throw new Error("vide");
+    const changed = !first && data && d.updated !== data.updated;
+    data = d;
+    await loadShared();
+    render();
+    if (changed) toast("Nouveau passage de Trouvailles");
+    if (first) {
+      const latest = (d.items || []).reduce((m, i) => (i.batch || "") > m ? i.batch : m, d.batch || "");
+      setTimeout(() => ls.set("vu", latest), 4000);
+    }
+  } catch(_) {
+    if (first) document.getElementById("feed").innerHTML = '<div class="empty"><b>Impossible de charger les trouvailles</b>Vérifie la connexion, la page réessaie toute seule.</div>';
+  }
+}
+load(true);
+// Au retour sur l'app et toutes les 5 minutes tant qu'elle est ouverte
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(false); });
+setInterval(() => { if (document.visibilityState === "visible") load(false); }, 5 * 60 * 1000);
+setInterval(() => { if (data && document.visibilityState === "visible") renderStatus(); }, 60 * 1000);
+
+try { if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {}); } catch(_) {}
+</script>
+</body>
+</html>
