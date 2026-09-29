@@ -147,7 +147,7 @@
 
 <main id="talk" style="padding-top:0">
   <section id="props-sec" hidden>
-    <div class="sec-h" style="--c:var(--moss)"><span class="dot"></span><h2>Propositions de Fable</h2></div>
+    <div class="sec-h" style="--c:var(--moss)"><span class="dot"></span><h2>Propositions de Trouvailles</h2></div>
     <div class="panel" id="props"></div>
   </section>
   <section>
@@ -155,7 +155,7 @@
     <div class="panel">
       <label for="idea" class="hint" style="display:block;margin:0 0 6px">Ce que vous voulez voir, ne plus voir, ou toute autre idée. Pris en compte au prochain passage.</label>
       <textarea id="idea" maxlength="600" placeholder="Ex. : plus de plantes d'intérieur, pas plus loin que Burnaby, cherche un vélo pour Zoé…"></textarea>
-      <button class="send" id="send-idea">Envoyer à Fable</button>
+      <button class="send" id="send-idea">Envoyer à Trouvailles</button>
       <details id="rules-box" hidden><summary>Consignes en vigueur</summary><ul id="rules"></ul></details>
     </div>
   </section>
@@ -168,7 +168,7 @@
 <dialog id="login" aria-labelledby="login-h">
   <form id="login-form" novalidate>
     <h3 id="login-h">Qui es-tu ?</h3>
-    <p>Une seule fois sur ce téléphone : ton prénom et le code de Trouvailles, pour que Fable sache que c'est bien vous.</p>
+    <p>Une seule fois sur ce téléphone : ton prénom et le code, pour que Trouvailles sache que c'est bien vous.</p>
     <div class="pick" role="group" aria-label="Prénom">
       <button type="button" data-who="Adil" aria-pressed="false">Adil</button>
       <button type="button" data-who="Zoé" aria-pressed="false">Zoé</button>
@@ -259,7 +259,7 @@ function askIdentity(msg){
   });
 }
 
-// Envoie une réponse à Fable ; renvoie "ok", "annule" ou "erreur"
+// Envoie une réponse à Trouvailles ; renvoie "ok", "annule" ou "erreur"
 async function sendBack(kind, value, n){
   if (!code || !who) { if (!(await askIdentity())) return "annule"; }
   const send = () => rpc("trouvailles_envoyer", {p_code: code, p_kind: kind, p_value: String(value).slice(0,600), p_item_n: n ?? null, p_who: who || null});
@@ -342,7 +342,7 @@ function render(){
   }).join("");
   document.getElementById("main").innerHTML = html || '<div class="empty" style="margin-top:18px">Rien pour ce filtre pour l\'instant.</div>';
 
-  // Propositions de Fable
+  // Propositions de Trouvailles
   const props = data.proposals || [];
   document.getElementById("props-sec").hidden = !props.length;
   document.getElementById("props").innerHTML = props.map(p => {
@@ -406,7 +406,7 @@ document.getElementById("send-idea").addEventListener("click", async () => {
   const ta = document.getElementById("idea");
   const v = ta.value.trim();
   if (!v) { ta.focus(); return; }
-  if (await sendBack("idee", v) === "ok") { ta.value = ""; toast("Envoyé. Fable en tiendra compte au prochain passage."); }
+  if (await sendBack("idee", v) === "ok") { ta.value = ""; toast("Envoyé. Trouvailles en tiendra compte au prochain passage."); }
 });
 
 document.querySelectorAll(".who button").forEach(b => b.addEventListener("click", () => setWho(b.dataset.who)));
