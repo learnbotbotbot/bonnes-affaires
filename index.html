@@ -86,7 +86,10 @@
        font-weight:800;font-size:15px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;transform:rotate(-9deg);
        box-shadow:0 2px 0 rgba(0,0,0,.08),0 4px 10px -4px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.55)}
   .dot.free{background:var(--dot-free);color:var(--dot-free-ink);font-size:13.5px}
-  .dot.price{background:var(--dot-price);color:var(--dot-price-ink)}
+  /* Prix : petite étiquette discrète dans le coin de la photo ; le gros rond vert reste réservé au gratuit */
+  .dot.price{right:auto;bottom:6px;left:6px;min-width:0;height:24px;padding:0 8px;border-radius:8px;transform:none;border:0;
+             font-size:13px;font-weight:700;background:rgba(255,255,255,.92);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+  @media (prefers-color-scheme: dark){.dot.price{background:rgba(22,32,27,.9);color:var(--ink)}}
   .new{position:absolute;z-index:2;left:6px;top:6px;background:var(--forest);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px}
   .info{min-width:0;display:flex;flex-direction:column;gap:2px;padding-top:2px}
   .t{font-weight:700;font-size:16px;line-height:1.22;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
