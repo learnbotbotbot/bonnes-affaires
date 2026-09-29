@@ -115,13 +115,27 @@
   footer{max-width:960px;margin:0 auto;padding:0 16px 28px;color:var(--muted);font-size:12px}
   footer p{margin:6px 0}
   :focus-visible{outline:3px solid var(--moss);outline-offset:2px}
+  dialog{border:0;border-radius:16px;padding:18px;background:var(--surface);color:var(--ink);width:min(92vw,380px);box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  dialog h3{font-family:Fraunces,Georgia,serif;margin:0 0 6px;font-size:21px}
+  dialog p{margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+  .pick{display:flex;gap:8px;margin-bottom:12px}
+  .pick button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-weight:700;cursor:pointer}
+  .pick button[aria-pressed="true"]{background:var(--on);color:var(--bg);border-color:var(--on)}
+  dialog input{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:16px Figtree,sans-serif;padding:10px}
+  .dlg-acts{display:flex;gap:8px;margin-top:14px}
+  .dlg-acts button{flex:1;border:0;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}
+  .dlg-acts .ok{background:var(--forest);color:#f3f1ea}
+  .dlg-acts .no{background:var(--chip)}
+  @media (prefers-color-scheme: dark){.dlg-acts .ok{background:var(--moss);color:#0e1a14}}
+  .err{color:var(--amber);font-size:13px;margin-top:6px;font-weight:600}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <div class="brand"><h1>Trouvailles</h1><div class="stamp" id="stamp">chargement…</div></div>
-    <p class="lede" id="lede">Gratuit et bonnes affaires du Grand Vancouver, triés deux fois par jour.</p>
+    <p class="lede" id="lede">Gratuit et bonnes affaires du Grand Vancouver, triés trois fois par jour.</p>
     <div class="who" role="group" aria-label="Qui regarde ?">Je suis
       <button id="who-adil" data-who="Adil" aria-pressed="false">Adil</button>
       <button id="who-zoe" data-who="Zoé" aria-pressed="false">Zoé</button>
@@ -149,32 +163,51 @@
 
 <footer>
   <p id="foot"></p>
-  <p>👍 = plus de ce genre · 👎 = moins · ✓ Pris = objet obtenu · ↗ = partager. Astuce iPhone : Safari, Partager, « Sur l'écran d'accueil ».</p>
+  <p>👍 = plus de ce genre · 👎 = moins · ✓ Pris = objet obtenu (retiré au prochain passage) · ↗ = partager. Le code n'est demandé qu'une fois par téléphone. Astuce iPhone : Safari, Partager, « Sur l'écran d'accueil ».</p>
 </footer>
+<dialog id="login" aria-labelledby="login-h">
+  <form id="login-form" novalidate>
+    <h3 id="login-h">Qui es-tu ?</h3>
+    <p>Une seule fois sur ce téléphone : ton prénom et le code de Trouvailles, pour que Fable sache que c'est bien vous.</p>
+    <div class="pick" role="group" aria-label="Prénom">
+      <button type="button" data-who="Adil" aria-pressed="false">Adil</button>
+      <button type="button" data-who="Zoé" aria-pressed="false">Zoé</button>
+    </div>
+    <label for="code" class="hint" style="display:block;margin:0 0 6px">Code</label>
+    <input id="code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="mot-mot-00">
+    <div class="err" id="login-err" role="alert" hidden></div>
+    <div class="dlg-acts"><button type="button" class="no" id="login-cancel">Plus tard</button><button type="submit" class="ok">Valider</button></div>
+  </form>
+</dialog>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-// Réponses envoyées dans une table Supabase en écriture seule (clé publique, lecture impossible)
-const SB_URL = "https://xjrjlxyvoxblckejvxtc.supabase.co/rest/v1/trouvailles_retours";
+// Trouvailles lues dans Supabase (lecture seule) ; réponses envoyées par une fonction protégée par un code
+const SB = "https://xjrjlxyvoxblckejvxtc.supabase.co/rest/v1";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcmpseHl2b3hibGNrZWp2eHRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjIxMzEsImV4cCI6MjA3OTY5ODEzMX0.RMuNeFG0RjuAafLThMcfKkdKQ2yQXilrqga9X9G8LCQ";
+const SB_HEADERS = {"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY,"Content-Type":"application/json"};
 
+// Sections par thème ; le prix (gratuit, payant, soldé) est une étiquette sur chaque carte
 const SECTIONS = [
-  {id:"jardin",   label:"Gratuit : jardin",     c:"--moss",  ico:"🌱"},
-  {id:"camping",  label:"Gratuit : camping",    c:"--sky",   ico:"🏕️"},
-  {id:"sofa",     label:"Gratuit : sofa-lits",  c:"--clay",  ico:"🛋️"},
-  {id:"coeur",    label:"Coups de cœur",        c:"--plum",  ico:"💎"},
+  {id:"jardin",   label:"Jardin",               c:"--moss",  ico:"🌱"},
+  {id:"camping",  label:"Camping et plein air", c:"--sky",   ico:"🏕️"},
+  {id:"sofa",     label:"Sofa-lits",            c:"--clay",  ico:"🛋️"},
+  {id:"autre",    label:"Autres trouvailles",   c:"--plum",  ico:"✨"},
   {id:"magasin",  label:"Soldes en magasin",    c:"--amber", ico:"🏷️"},
-  {id:"evenement",label:"Ventes et événements", c:"--forest",ico:"📅"},
-  {id:"autre",    label:"Autres trouvailles",   c:"--muted", ico:"✨"}
+  {id:"evenement",label:"Ventes et événements", c:"--ink",   ico:"📅"}
 ];
+const KNOWN = new Set(SECTIONS.map(s => s.id));
+const secOf = it => KNOWN.has(it.section) ? it.section : "autre";   // anciennes sections (ex. « coeur ») rangées dans Autres
 const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-let data = null, filter = "tout", who = "", mine = {};
+let data = null, filter = "tout", who = "", mine = {}, prevVisit = null;
 
 // Petits utilitaires de stockage local (préférences de ce téléphone seulement)
 const ls = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(_) { return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} }
 };
+let code = ls.get("code", "");
+
 function fmt(iso, opts){
   try { return new Intl.DateTimeFormat("fr-CA", Object.assign({timeZone:"America/Vancouver"}, opts)).format(new Date(iso)); }
   catch(e){ return ""; }
@@ -182,19 +215,63 @@ function fmt(iso, opts){
 function toast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg; t.hidden = false;
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2600);
 }
 
-// Envoie une réponse à Fable ; renvoie true si c'est enregistré
-async function sendBack(kind, value, n){
+// « Nouveau » = arrivé depuis ta dernière visite sur ce téléphone (sinon : dernier passage)
+const isNew = it => prevVisit ? (it.batch || "") > prevVisit : it.batch === data.batch;
+
+// Appel d'une fonction Supabase ; renvoie null en cas d'erreur réseau
+async function rpc(fn, args){
   try {
-    const r = await fetch(SB_URL, {
-      method:"POST",
-      headers:{"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},
-      body: JSON.stringify({kind, value: String(value).slice(0,600), item_n: n ?? null, who: who || null})
-    });
-    return r.ok;
-  } catch(_) { return false; }
+    const r = await fetch(SB + "/rpc/" + fn, {method:"POST", headers:SB_HEADERS, body:JSON.stringify(args)});
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(_) { return null; }
+}
+
+// Fenêtre « Qui es-tu ? » : prénom + code, demandés une seule fois par téléphone
+function askIdentity(msg){
+  return new Promise(resolve => {
+    const dlg = document.getElementById("login");
+    const err = document.getElementById("login-err");
+    const input = document.getElementById("code");
+    const close = () => { if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); };
+    let pick = who, done = false;
+    const finish = v => { if (!done) { done = true; close(); resolve(v); } };
+    const paint = () => dlg.querySelectorAll(".pick button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === pick)));
+    paint();
+    input.value = code;
+    err.hidden = !msg; err.textContent = msg || "";
+    dlg.querySelector(".pick").onclick = e => { const b = e.target.closest("button[data-who]"); if (b) { pick = b.dataset.who; paint(); } };
+    document.getElementById("login-cancel").onclick = () => finish(false);
+    dlg.oncancel = () => finish(false);
+    document.getElementById("login-form").onsubmit = async e => {
+      e.preventDefault();
+      const c = input.value.trim().toLowerCase();
+      if (!pick) { err.textContent = "Touche Adil ou Zoé."; err.hidden = false; return; }
+      if (!c) { input.focus(); return; }
+      const ok = await rpc("trouvailles_verifier", {p_code: c});
+      if (ok === true) { code = c; ls.set("code", c); setWho(pick); finish(true); }
+      else { err.textContent = ok === null ? "Pas de connexion. Réessaie." : "Code incorrect."; err.hidden = false; }
+    };
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+  });
+}
+
+// Envoie une réponse à Fable ; renvoie "ok", "annule" ou "erreur"
+async function sendBack(kind, value, n){
+  if (!code || !who) { if (!(await askIdentity())) return "annule"; }
+  const send = () => rpc("trouvailles_envoyer", {p_code: code, p_kind: kind, p_value: String(value).slice(0,600), p_item_n: n ?? null, p_who: who || null});
+  let res = await send();
+  if (res === "code") {
+    code = ""; ls.set("code", "");
+    if (!(await askIdentity("Le code a changé : entre le nouveau."))) return "annule";
+    res = await send();
+  }
+  if (res === "ok") return "ok";
+  toast(res === "limite" ? "Trop de réponses d'un coup, réessaie plus tard." : "Pas de connexion. Réessaie dans un instant.");
+  return "erreur";
 }
 
 function priceHtml(it){
@@ -206,8 +283,8 @@ function priceHtml(it){
 function card(it, sec){
   const v = mine[it.n] || "";
   const img = it.img ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.img) + '" alt="" onerror="this.remove()">' : '';
-  const flags = (it.star ? '<span class="flag star" title="Coup de cœur">★</span>' : '')
-              + (it.batch === data.batch ? '<span class="flag new" title="Nouveau">•</span>' : '');
+  const flags = (it.star ? '<span class="flag star" title="Aubaine">★</span>' : '')
+              + (isNew(it) ? '<span class="flag new" title="Nouveau">•</span>' : '');
   return '<article class="card' + (v === "pris" ? ' gone' : '') + '" style="--c:var(' + sec.c + ')">'
     + '<a class="open" href="' + esc(it.url) + '" target="_blank" rel="noopener">'
     + '<div class="ph"><div class="noimg">' + sec.ico + '</div>' + img + flags + priceHtml(it) + '</div>'
@@ -230,21 +307,32 @@ function eventRow(it){
     + (it.note ? '<br><span class="note">' + esc(it.note) + '</span>' : '') + '</span></a>';
 }
 
+// Ordre dans une section : aubaines, puis nouveautés, puis les plus récentes
+const rank = (a, b) => (!!b.star - !!a.star) || (isNew(b) - isNew(a)) || ((b.n || 0) - (a.n || 0));
+
 function render(){
   const items = data.items || [];
   const counts = {};
-  items.forEach(i => counts[i.section] = (counts[i.section] || 0) + 1);
-  const newCount = items.filter(i => i.batch === data.batch).length;
+  items.forEach(i => counts[secOf(i)] = (counts[secOf(i)] || 0) + 1);
+  const newCount = items.filter(isNew).length;
+  const freeCount = items.filter(i => i.priceType === "free").length;
+  const starCount = items.filter(i => i.star).length;
 
-  const chips = [{id:"tout", label:"Tout", n:items.length}, {id:"nouveau", label:"Nouveau", n:newCount}]
+  const chips = [{id:"tout", label:"Tout", n:items.length}, {id:"nouveau", label:"Nouveau", n:newCount}, {id:"gratuit", label:"Gratuit", n:freeCount}]
+    .concat(starCount ? [{id:"aubaines", label:"★ Aubaines", n:starCount}] : [])
     .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.label, n:counts[s.id]})));
   document.getElementById("chips").innerHTML = chips.map(c =>
     '<button class="chip" id="f-' + c.id + '" aria-pressed="' + (filter === c.id) + '" data-f="' + c.id + '">'
     + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("");
 
-  const shown = items.filter(i => filter === "tout" || (filter === "nouveau" ? i.batch === data.batch : i.section === filter));
+  const match = i => filter === "tout"
+    || (filter === "nouveau" ? isNew(i)
+      : filter === "gratuit" ? i.priceType === "free"
+      : filter === "aubaines" ? !!i.star
+      : secOf(i) === filter);
+  const shown = items.filter(match);
   const html = SECTIONS.map(sec => {
-    const list = shown.filter(i => i.section === sec.id);
+    const list = shown.filter(i => secOf(i) === sec.id).sort(rank);
     if (!list.length) return "";
     const inner = sec.id === "evenement"
       ? '<div class="events">' + list.map(eventRow).join("") + '</div>'
@@ -271,7 +359,8 @@ function render(){
 
   document.getElementById("stamp").innerHTML = "Mis à jour<br>" + esc(fmt(data.updated,{weekday:"long",hour:"numeric",minute:"2-digit"}));
   if (data.lede) document.getElementById("lede").textContent = data.lede;
-  document.getElementById("foot").textContent = items.length + " trouvailles des derniers jours, dont " + newCount + " nouvelles au dernier passage.";
+  document.getElementById("foot").textContent = items.length + " trouvailles en ce moment, dont " + newCount
+    + (prevVisit ? " nouvelles depuis ta dernière visite." : " nouvelles au dernier passage.");
 }
 
 function setWho(w){
@@ -292,12 +381,10 @@ document.getElementById("main").addEventListener("click", async e => {
     try { await navigator.clipboard.writeText(text + " " + it.url); toast("Lien copié"); } catch(_) { toast(it.url); }
     return;
   }
-  if (!who) toast("Astuce : touche Adil ou Zoé en haut pour signer tes votes");
-  const ok = await sendBack("vote", act, n);
-  if (ok) {
+  if (await sendBack("vote", act, n) === "ok") {
     mine[n] = act; ls.set("mine", mine); render();
     toast(act === "pris" ? "Noté : n° " + n + " retiré au prochain passage" : act === "oui" ? "Noté : plus de ce genre" : "Noté : moins de ce genre");
-  } else toast("Pas de connexion. Réessaie dans un instant.");
+  }
 });
 
 document.getElementById("chips").addEventListener("click", e => {
@@ -310,32 +397,37 @@ document.getElementById("chips").addEventListener("click", e => {
 document.getElementById("props").addEventListener("click", async e => {
   const b = e.target.closest("button[data-prop]");
   if (!b) return;
-  const ok = await sendBack("proposition", b.dataset.prop + " " + b.dataset.v);
-  if (ok) { mine["P:" + b.dataset.prop] = b.dataset.v; ls.set("mine", mine); render(); toast("Merci, c'est noté"); }
-  else toast("Pas de connexion. Réessaie dans un instant.");
+  if (await sendBack("proposition", b.dataset.prop + " " + b.dataset.v) === "ok") {
+    mine["P:" + b.dataset.prop] = b.dataset.v; ls.set("mine", mine); render(); toast("Merci, c'est noté");
+  }
 });
 
 document.getElementById("send-idea").addEventListener("click", async () => {
   const ta = document.getElementById("idea");
   const v = ta.value.trim();
   if (!v) { ta.focus(); return; }
-  const ok = await sendBack("idee", v);
-  if (ok) { ta.value = ""; toast("Envoyé. Fable en tiendra compte au prochain passage."); }
-  else toast("Pas de connexion. Ton texte est gardé, réessaie.");
+  if (await sendBack("idee", v) === "ok") { ta.value = ""; toast("Envoyé. Fable en tiendra compte au prochain passage."); }
 });
 
 document.querySelectorAll(".who button").forEach(b => b.addEventListener("click", () => setWho(b.dataset.who)));
 
 filter = ls.get("filtre", "tout");
 mine = ls.get("mine", {});
+prevVisit = ls.get("vu", null);
 setWho(ls.get("who", ""));
 
-fetch("data.json?v=" + Date.now(), {cache:"no-store"})
-  .then(r => r.json())
-  .then(d => {
+fetch(SB + "/trouvailles_etat?id=eq.1&select=data", {headers:{"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY}, cache:"no-store"})
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(rows => {
+    const d = rows && rows[0] && rows[0].data;
+    if (!d) throw new Error("vide");
     data = d;
-    if (filter !== "tout" && filter !== "nouveau" && !(d.items || []).some(i => i.section === filter)) filter = "tout";
+    const ok = new Set(["tout","nouveau","gratuit","aubaines"]);
+    if (!ok.has(filter) && !(d.items || []).some(i => secOf(i) === filter)) filter = "tout";
     render();
+    // Mémorise cette visite pour calculer les nouveautés la prochaine fois
+    const latest = (d.items || []).reduce((m, i) => (i.batch || "") > m ? i.batch : m, d.batch || "");
+    setTimeout(() => ls.set("vu", latest), 4000);
   })
   .catch(() => { document.getElementById("main").innerHTML = '<div class="empty" style="margin-top:18px">Impossible de charger les trouvailles. Réessaie dans un instant.</div>'; });
 </script>
