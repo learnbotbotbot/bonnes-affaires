@@ -1,6 +1,6 @@
 // Service worker de Trouvailles : rend la page installable et lisible hors ligne.
 // Réseau d'abord pour les fichiers du site ; les données (Supabase) et les autres domaines ne sont jamais mis en cache.
-const CACHE = "trouvailles-v2";
+const CACHE = "trouvailles-v3";
 const BASE = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {
