@@ -104,6 +104,8 @@
   .deal .prix{margin:2px 0;font-weight:700}
   .deal .prix s{font-weight:400;opacity:.6;margin-left:6px}
   .deal .bike{margin:2px 0;font-size:13px;opacity:.8}
+  .liq{grid-template-columns:44px 1fr}
+  .liq .ico{grid-row:span 2;width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:22px}
   .subchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 10px}
   .note{grid-column:1 / -1;margin:4px 2px 0;font-size:13.5px;line-height:1.38;color:var(--ink);opacity:.85}
   .fans{grid-column:1 / -1;margin:2px 2px 0;font-size:12.5px;color:var(--leaf);font-weight:600}
@@ -311,7 +313,7 @@ const ls = {
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} }
 };
 
-let data = null, shared = [], tab = "feed", rabaisData = null, rubF = "tout";
+let data = null, shared = [], tab = "feed", rabaisData = null, rubF = "tout", liqF = "tout";
 let code = ls.get("code", ""), who = ls.get("who", "");
 let mine = ls.get("mine", {});             // mes réponses : { n: "oui" | "non" | "pris" }
 let listOff = ls.get("listOff", {});       // retirés de la liste sur ce téléphone
@@ -517,6 +519,40 @@ function renderRabais(){
     + (rabaisData && rabaisData.updated ? '<p class="age" style="text-align:center;margin-top:12px">Circulaires lues ' + ago(rabaisData.updated) + ' (Flipp). Magasins à 10 km aller-retour au plus.</p>' : "");
 }
 
+// Liquidations et enchères : fermetures de magasins, enchères locales, grosses aubaines (publiées par le bot dans l'état)
+const LIQ_TYPES = [
+  {id:"fermeture", label:"Fermetures et ventes", ico:"🏬"},
+  {id:"enchere",   label:"Enchères",   ico:"🔨"},
+  {id:"aubaine",   label:"Aubaines",   ico:"💸"}
+];
+const liqItems = () => (data && data.liquidations && data.liquidations.items) || [];
+function liqCard(it){
+  const t = LIQ_TYPES.find(x => x.id === it.type) || LIQ_TYPES[0];
+  const quand = it.fin ? "Se termine le " + fmt(it.fin, {weekday:"short", day:"numeric", month:"short"})
+    : it.date ? "Publié " + ago(it.date) : "Repéré " + ago(it.seen);
+  return '<article class="item liq"><div class="ico" aria-hidden="true">' + t.ico + '</div>'
+    + '<div class="info">'
+    + '<a class="t" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>'
+    + '<p class="where">' + esc([it.place, it.source].filter(Boolean).join(" · ")) + '</p>'
+    + '<p class="age">' + esc(quand) + '</p>'
+    + '</div>'
+    + (it.note ? '<p class="note">' + esc(it.note) + '</p>' : "")
+    + '</article>';
+}
+function renderLiquidations(){
+  const items = liqItems();
+  const liste = [{id:"tout", label:"Tout", n:items.length}]
+    .concat(LIQ_TYPES.map(t => ({id:t.id, label:t.label, n:items.filter(i => i.type === t.id).length})).filter(c => c.n));
+  if (!liste.some(c => c.id === liqF)) liqF = "tout";
+  const shown = items.filter(i => liqF === "tout" || i.type === liqF);
+  document.getElementById("count").textContent = shown.length + (shown.length > 1 ? " occasions" : " occasion") + " de liquidation";
+  document.getElementById("feed").innerHTML =
+    '<div class="subchips">' + liste.map(c => '<button class="chip" data-liq="' + esc(c.id) + '" aria-pressed="' + (liqF === c.id) + '">' + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("") + '</div>'
+    + (shown.length ? '<div class="grp"><div class="items">' + shown.map(liqCard).join("") + '</div></div>'
+      : '<div class="empty"><b>Rien pour l\'instant</b>Fermetures, enchères et aubaines sont relues à chaque passage.</div>')
+    + '<p class="age" style="text-align:center;margin-top:12px">Sources : actualités locales, RedFlagDeals, Able Auctions. Metro Vancouver.</p>';
+}
+
 // Ordre : alertes, nouveautés, puis plus récentes ; ou par distance
 function ranker(){
   if (sort === "proche") return (a, b) => ((trip(a) || {km:999}).km - (trip(b) || {km:999}).km) || ((b.n || 0) - (a.n || 0));
@@ -535,13 +571,14 @@ function render(){
     .concat(newN ? [{id:"nouveau", label:"Nouveau", n:newN}] : [])
     .concat([{id:"gratuit", label:"Gratuit", n:freeN}])
     .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.short, n:counts[s.id]})))
-    .concat(rabaisData && (rabaisData.items || []).length ? [{id:"rabais", label:"🏷️ Rabais", n:rabaisData.items.length}] : []);
+    .concat(rabaisData && (rabaisData.items || []).length ? [{id:"rabais", label:"🏷️ Rabais", n:rabaisData.items.length}] : [])
+    .concat(liqItems().length ? [{id:"liquidations", label:"🔨 Liquidations", n:liqItems().length}] : []);
   if (!chips.some(c => c.id === filter)) filter = "tout";
   document.getElementById("chips").innerHTML = chips.map(c =>
     '<button class="chip" data-f="' + c.id + '" aria-pressed="' + (filter === c.id) + '">' + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("");
   document.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
 
-  if (filter === "rabais") renderRabais(); else {
+  if (filter === "rabais") renderRabais(); else if (filter === "liquidations") renderLiquidations(); else {
   const match = i => filter === "tout" || (filter === "nouveau" ? isNew(i) : filter === "gratuit" ? i.priceType === "free" : secOf(i) === filter);
   const shown = visible.filter(match).sort(ranker());
   document.getElementById("count").textContent = shown.length + (shown.length > 1 ? " trouvailles" : " trouvaille");
@@ -694,6 +731,7 @@ document.addEventListener("click", async e => {
     return;
   }
   if (b.dataset.rub) { rubF = b.dataset.rub; renderRabais(); return; }
+  if (b.dataset.liq) { liqF = b.dataset.liq; renderLiquidations(); return; }
   if (b.dataset.f) { filter = b.dataset.f; ls.set("filtre3", filter); render(); return; }
   if (b.dataset.sort) { sort = b.dataset.sort; ls.set("tri", sort); render(); return; }
   if (b.id === "unhide") { Object.keys(mine).forEach(k => { if (mine[k] === "non") delete mine[k]; }); ls.set("mine", mine); render(); return; }
