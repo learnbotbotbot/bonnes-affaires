@@ -295,9 +295,9 @@ const SB_HEADERS = {"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY,"Content-
 
 // Sections connues ; tout le reste est rangé dans « Autres recherches »
 const SECTIONS = [
+  {id:"decouverte", label:"Gratuit et occasion", short:"Gratuit et occasion", ico:"🎁"},
   {id:"sofa",       label:"Lits convertibles", short:"Lits",        ico:"🛋️"},
   {id:"jardin",     label:"Jardin",            short:"Jardin",      ico:"🌱"},
-  {id:"decouverte", label:"Découvertes",       short:"Découvertes", ico:"✨"},
   {id:"autre",      label:"Autres recherches", short:"Autres",      ico:"🔎"}
 ];
 const KNOWN = new Set(SECTIONS.map(s => s.id));
