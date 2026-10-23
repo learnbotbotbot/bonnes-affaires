@@ -100,6 +100,11 @@
   .age{margin:0;font-size:12.5px;color:var(--muted)}
   .age.hot{color:var(--leaf);font-weight:600}
   .age.late{color:var(--warn);font-weight:600}
+  .deal .pct{position:absolute;z-index:2;left:6px;top:6px;background:#c8442f;color:#fff;font-weight:800;font-size:13px;padding:3px 7px;border-radius:8px}
+  .deal .prix{margin:2px 0;font-weight:700}
+  .deal .prix s{font-weight:400;opacity:.6;margin-left:6px}
+  .deal .bike{margin:2px 0;font-size:13px;opacity:.8}
+  .subchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 10px}
   .note{grid-column:1 / -1;margin:4px 2px 0;font-size:13.5px;line-height:1.38;color:var(--ink);opacity:.85}
   .fans{grid-column:1 / -1;margin:2px 2px 0;font-size:12.5px;color:var(--leaf);font-weight:600}
   .acts{grid-column:1 / -1;display:flex;gap:6px;margin-top:8px}
@@ -306,7 +311,7 @@ const ls = {
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} }
 };
 
-let data = null, shared = [], tab = "feed";
+let data = null, shared = [], tab = "feed", rabaisData = null, rubF = "tout";
 let code = ls.get("code", ""), who = ls.get("who", "");
 let mine = ls.get("mine", {});             // mes réponses : { n: "oui" | "non" | "pris" }
 let listOff = ls.get("listOff", {});       // retirés de la liste sur ce téléphone
@@ -481,6 +486,37 @@ function card(it, mode){
     + '<div class="acts">' + acts + '</div></article>';
 }
 
+// Carte d'un rabais de circulaire (Flipp) : prix, prix régulier, magasin à vélo
+function dealCard(it){
+  const img = it.img ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.img) + '" alt="" onerror="this.remove()">' : "";
+  const fin = it.until ? fmt(it.until, {weekday:"short", day:"numeric", month:"short"}) : "";
+  return '<article class="item deal">'
+    + '<a class="ph" href="' + esc(it.url) + '" target="_blank" rel="noopener" aria-label="Voir sur Flipp">🏷️' + img
+    + '<span class="pct">' + (it.upTo ? "jusqu'à " : "") + "-" + it.pct + ' %</span></a>'
+    + '<div class="info">'
+    + '<a class="t" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>'
+    + (it.price ? '<p class="prix">' + esc(it.price) + (it.oldPrice ? '<s>' + esc(it.oldPrice) + '</s>' : "") + '</p>' : "")
+    + '<p class="where">' + esc(it.store) + ', ' + esc(it.place || "") + '</p>'
+    + '<p class="bike">🚲 ' + String(it.km).replace(".", ",") + ' km' + (fin ? ", jusqu'au " + esc(fin) : "") + '</p>'
+    + '</div>'
+    + (it.note ? '<p class="note">' + esc(it.note) + '</p>' : "")
+    + '</article>';
+}
+function renderRabais(){
+  const items = (rabaisData && rabaisData.items) || [];
+  const rubs = {}; items.forEach(i => { const r = i.rubrique || "autres"; rubs[r] = (rubs[r] || 0) + 1; });
+  const ordre = ["épicerie", "maison et jardin", "santé et beauté", "animaux", "quincaillerie", "autres"];
+  const liste = [{id:"tout", label:"Tout", n:items.length}].concat(ordre.filter(r => rubs[r]).map(r => ({id:r, label:r, n:rubs[r]})));
+  if (!liste.some(c => c.id === rubF)) rubF = "tout";
+  const shown = items.filter(i => rubF === "tout" || (i.rubrique || "autres") === rubF);
+  document.getElementById("count").textContent = shown.length + " rabais à 30 % et plus, à vélo";
+  document.getElementById("feed").innerHTML =
+    '<div class="subchips">' + liste.map(c => '<button class="chip" data-rub="' + esc(c.id) + '" aria-pressed="' + (rubF === c.id) + '">' + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("") + '</div>'
+    + (shown.length ? '<div class="grp"><div class="items">' + shown.map(dealCard).join("") + '</div></div>'
+      : '<div class="empty"><b>Aucun rabais pour l\'instant</b>Les circulaires sont relues chaque matin.</div>')
+    + (rabaisData && rabaisData.updated ? '<p class="age" style="text-align:center;margin-top:12px">Circulaires lues ' + ago(rabaisData.updated) + ' (Flipp). Magasins à 10 km aller-retour au plus.</p>' : "");
+}
+
 // Ordre : alertes, nouveautés, puis plus récentes ; ou par distance
 function ranker(){
   if (sort === "proche") return (a, b) => ((trip(a) || {km:999}).km - (trip(b) || {km:999}).km) || ((b.n || 0) - (a.n || 0));
@@ -498,12 +534,14 @@ function render(){
   const chips = [{id:"tout", label:"Tout", n:visible.length}]
     .concat(newN ? [{id:"nouveau", label:"Nouveau", n:newN}] : [])
     .concat([{id:"gratuit", label:"Gratuit", n:freeN}])
-    .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.short, n:counts[s.id]})));
+    .concat(SECTIONS.filter(s => counts[s.id]).map(s => ({id:s.id, label:s.short, n:counts[s.id]})))
+    .concat(rabaisData && (rabaisData.items || []).length ? [{id:"rabais", label:"🏷️ Rabais", n:rabaisData.items.length}] : []);
   if (!chips.some(c => c.id === filter)) filter = "tout";
   document.getElementById("chips").innerHTML = chips.map(c =>
     '<button class="chip" data-f="' + c.id + '" aria-pressed="' + (filter === c.id) + '">' + esc(c.label) + '<span class="n">' + c.n + '</span></button>').join("");
   document.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
 
+  if (filter === "rabais") renderRabais(); else {
   const match = i => filter === "tout" || (filter === "nouveau" ? isNew(i) : filter === "gratuit" ? i.priceType === "free" : secOf(i) === filter);
   const shown = visible.filter(match).sort(ranker());
   document.getElementById("count").textContent = shown.length + (shown.length > 1 ? " trouvailles" : " trouvaille");
@@ -519,6 +557,7 @@ function render(){
     }).join("");
   }
   document.getElementById("feed").innerHTML = html;
+  }
   const hiddenN = all.length - visible.length;
   const hn = document.getElementById("hidden-note");
   hn.hidden = !hiddenN;
@@ -654,6 +693,7 @@ document.addEventListener("click", async e => {
     window.scrollTo({top:0});
     return;
   }
+  if (b.dataset.rub) { rubF = b.dataset.rub; renderRabais(); return; }
   if (b.dataset.f) { filter = b.dataset.f; ls.set("filtre3", filter); render(); return; }
   if (b.dataset.sort) { sort = b.dataset.sort; ls.set("tri", sort); render(); return; }
   if (b.id === "unhide") { Object.keys(mine).forEach(k => { if (mine[k] === "non") delete mine[k]; }); ls.set("mine", mine); render(); return; }
@@ -757,6 +797,14 @@ document.getElementById("conso").addEventListener("change", e => {
 });
 
 // ---------- Chargement et mises à jour régulières ----------
+async function loadRabais(){
+  try {
+    const r = await fetch(SB + "/trouvailles_rabais?id=eq.1&select=data", {headers:{"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY}, cache:"no-store"});
+    if (!r.ok) return;
+    const rows = await r.json();
+    if (rows && rows[0] && rows[0].data) rabaisData = rows[0].data;
+  } catch(_) {}
+}
 async function load(first){
   try {
     const r = await fetch(SB + "/trouvailles_etat?id=eq.1&select=data", {headers:{"apikey":SB_KEY,"Authorization":"Bearer " + SB_KEY}, cache:"no-store"});
@@ -766,7 +814,7 @@ async function load(first){
     if (!d) throw new Error("vide");
     const changed = !first && data && d.updated !== data.updated;
     data = d;
-    await loadShared();
+    await Promise.all([loadShared(), loadRabais()]);
     render();
     if (changed) toast("Nouveau passage de Trouvailles");
     if (first) {
