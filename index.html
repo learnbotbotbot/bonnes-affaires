@@ -788,10 +788,15 @@ document.addEventListener("click", async e => {
 });
 
 // Envoyer une trouvaille à l'autre : notification sur son cell (sinon, feuille de partage du téléphone)
+let envoiEnCours = false; // empêche un double envoi si on tape deux fois sur le bouton
 async function sendToOther(it){
+  if (envoiEnCours) return;
   if (!who) { if (!(await askIdentity())) return; render(); }
   const to = other();
   if (code && to) {
+    envoiEnCours = true;
+    toast("Envoi à " + to + "…");
+    setTimeout(() => { envoiEnCours = false; }, 4000);
     try {
       const r = await fetch(SB_URL + "/functions/v1/trouvailles-partager", {method:"POST", headers:SB_HEADERS, body:JSON.stringify({code, n: it.n, from: who})});
       const j = r.ok ? await r.json() : null;
